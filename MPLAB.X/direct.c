@@ -16,14 +16,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 *******************************************************************************/
-
+#include <xc.h>
 #include <string.h>
 #include <fileio_config.h>
-#include <fileio.h>
-#include <direct.h>
+#include "fileio.h"
+#include "direct.h"
 #include "files.h"
-#include "lvp.h"
-
+#include "memory.h"
+#include "pwm2.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -79,7 +79,6 @@ uint32_t DIRECT_CapacityRead(void* config)
  *****************************************************************************/
 uint8_t DIRECT_InitIO (void* config)
 {
-    LVP_init();
     return  true;
 }
 
@@ -191,7 +190,6 @@ void DIRECT_Initialize( void) {
     memset((void*)row, 0xff, sizeof(row));    // fill buffer with blanks
     row_address = 0x8000;
     lvp = false;
-    LVP_init();
 }
 
 /**
@@ -211,17 +209,16 @@ bool isDigit( char * c){
     
 void lvpWrite( void){
     // check for first entry in lvp 
-    if (!lvp) {
-        lvp = true;
-        LVP_enter();
-        LVP_bulkErase();
-    }
     if (row_address >= CFG_ADDRESS) {    // use the special cfg word sequence
-        LVP_cfgWrite( &row[7], CFG_NUM);
+        //do nothing...
+        //LVP_cfgWrite( &row[7], CFG_NUM);
     }
     else { // normal row programming sequence
-        LVP_addressLoad( row_address);
-        LVP_rowWrite( row, ROW_SIZE);
+        if (row_address >=0x1600) {
+            FLASH_WriteBlock(row_address, row);
+        }
+        //LVP_addressLoad( row_address);
+        //LVP_rowWrite( row, ROW_SIZE);
     }
 }
 
@@ -234,6 +231,8 @@ void writeRow( void) {
         lvpWrite();
         memset((void*)row, 0xff, sizeof(row));    // fill buffer with blanks
     }
+    PWM2_Off();
+    LATCbits.LATC3 = !LATCbits.LATC3;
 }
 
 /**
@@ -278,8 +277,9 @@ void packRow( uint32_t address, uint8_t *data, uint8_t data_count) {
 
 void programLastRow( void) {
     writeRow();
-    LVP_exit();
+    //LVP_exit();
     lvp = false;    
+    LATCbits.LATC3 = 0;
 }
 
 // the actual state machine - Hex Machina

@@ -66,7 +66,7 @@ volatile USB_MSD_CBW msd_cbw MSD_CBW_ADDR_TAG;  //Must be located in USB module 
 volatile USB_MSD_CSW msd_csw MSD_CSW_ADDR_TAG;  //Must be located in USB module accessible RAM
 
 #if defined(__18CXX) || defined(__XC8)
-    volatile char msd_buffer[64] MSD_BUFFER_ADDRESS_TAG;
+    volatile char msd_buffer[64];
 #else
     volatile char msd_buffer[512];
 #endif

@@ -165,22 +165,6 @@ limitations under the License.
 #define MAX_LUN                 0u   //Includes 0 (ex: 0 = 1 LUN, 1 = 2 LUN, etc.)
 #define MSD_DATA_IN_EP          1u
 #define MSD_DATA_OUT_EP         1u
-/* CDC */
-#define CDC_COMM_INTF_ID        0x01
-#define CDC_COMM_EP              2
-#define CDC_COMM_IN_EP_SIZE      10
-
-#define CDC_DATA_INTF_ID        0x02
-#define CDC_DATA_EP             3
-#define CDC_DATA_OUT_EP_SIZE    64u
-#define CDC_DATA_IN_EP_SIZE     64u
-
-#define USB_CDC_SET_LINE_CODING_HANDLER APP_SetLineCodingHandler
-//#define USB_CDC_SUPPORT_HARDWARE_FLOW_CONTROL
-
-//#define USB_CDC_SUPPORT_ABSTRACT_CONTROL_MANAGEMENT_CAPABILITIES_D2 //Send_Break command
-#define USB_CDC_SUPPORT_ABSTRACT_CONTROL_MANAGEMENT_CAPABILITIES_D1 //Set_Line_Coding, Set_Control_Line_State, Get_Line_Coding, and Serial_State commands
-
 
 /** DEFINITIONS ****************************************************/
 

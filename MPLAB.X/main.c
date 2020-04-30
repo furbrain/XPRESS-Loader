@@ -18,28 +18,58 @@ limitations under the License.
 *******************************************************************************/
 
 /** INCLUDES *******************************************************/
+#include <pic16f1455.h>
+
 #include "system.h"     // find release MAJOR/MINOR and DATE in here!!!
 #include "system_config.h"
 
 #include "usb.h"
 #include "usb_device_msd.h"
-#include "usb_device_cdc.h"
 
 #include "app_device_msd.h"
-#include "app_device_cdc.h"
 #include "direct.h"
-#include "lvp.h"
+#include "tmr1.h"
+#include "tmr2.h"
+#include "pwm2.h"
 
 /********************************************************************
  * Function:        void main(void)
  *******************************************************************/
-MAIN_RETURN main(void)
-{
-    SYSTEM_Initialize();
+inline void goto_app(void) {
+    PWM2CONbits.PWM2EN = 0;
+    LATCbits.LATC3 = 0;    
+    asm ("movlp 0x16"); 
+    asm ("goto 0x600");    
+}
 
+inline void throb(void) {
+    static uint8_t duty = PWM2_MAX_VALUE;
+    static bool throb_up = false;
+    if (TMR1_HasOverflowOccured()) {
+        PWM2_Initialize();
+        if (throb_up) {
+            duty++;
+            if (duty >= PWM2_MAX_VALUE) throb_up = false;
+        } else {
+            duty--;
+            if (duty <= 6) throb_up = true;                
+        }
+        PWM2_LoadDutyValue(duty);
+        PIR1bits.TMR1IF = 0;
+        TMR1_Reload();
+    }
+}
+
+#define charged() (PORTAbits.RA5)
+
+void run_usb(void) {
     USBDeviceInit();
     USBDeviceAttach();
-
+    TMR1_Initialize();
+    TMR1_StartTimer();
+    TMR2_Initialize();
+    TMR2_StartTimer();
+    PWM2_Initialize();
     while(1)
     {
         SYSTEM_Tasks();
@@ -47,24 +77,20 @@ MAIN_RETURN main(void)
         #if defined(USB_POLLING)
             USBDeviceTasks();
         #endif
-
+            if (charged()) {
+                PWM2_Off();
+                LATCbits.LATC3 = 1;
+                
+            } else {
+                throb();
+            }
+        
         /* If the USB device isn't configured yet, we can't really do anything
          * else since we don't have a host to talk to.  So jump back to the
          * top of the while loop. */
         if( USBGetDeviceState() < CONFIGURED_STATE )
         {   /* USB connection not available or not yet complete */
             // implement nMCLR button 
-            if ( BUTTON_IsPressed(BUTTON_S1)) {
-                ICSP_nMCLR = SLAVE_RESET;
-                LED_Off(GREEN_LED);     // RED = target RESET
-                LED_On (RED_LED);
-            }
-            else { // release 
-                ICSP_nMCLR = SLAVE_RUN;
-                LED_Off(GREEN_LED);   // both LED off, not connected
-                LED_Off(RED_LED);
-            }
-            
             /* Jump back to the top of the while loop. */
             continue;
         }
@@ -78,28 +104,28 @@ MAIN_RETURN main(void)
             /* Jump back to the top of the while loop. */
             continue;
         }
-        // implement nMCLR button
-        if ( BUTTON_IsPressed(BUTTON_S1)) {
-            LUNSoftDetach(0);       // mark the media as temporarily unavailable 
-            ICSP_nMCLR = SLAVE_RESET;
-            LED_Off(GREEN_LED);     // turn off RED LED to indicate ready for download
-            LED_On (RED_LED);
-            DIRECT_Initialize();    // reset the programming state machine
-        }
-        else { // simply act as a slave reset 
-            LUNSoftAttach(0);                       // mark the media as available
-            if ( !DIRECT_ProgrammingInProgress()) {  // do not release during prog.!
-                ICSP_nMCLR = SLAVE_RUN;
-                LED_On(GREEN_LED);   // turn off RED LED to indicate ready for download
-                LED_Off(RED_LED);
-            }
-        }
-
         //Application specific tasks
         APP_DeviceMSDTasks();
-        APP_DeviceCDCEmulatorTasks();
+    }//end while    
+}
 
-    }//end while
+bool isUSBPower(void) {
+    ADCON0bits.GO = 1;
+    while (ADCON0bits.GO == 1);
+    return (ADRES < 476);
+}
+
+
+MAIN_RETURN main(void)
+{
+    SYSTEM_Initialize();
+    LATAbits.LATA5 = 0;
+    __delay_ms(1);
+    if (isUSBPower()) {
+        run_usb();
+    } else {
+        goto_app();
+    } 
 }//end main
 
 
@@ -145,7 +171,6 @@ bool USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, uint16_t size
             /* When the device is configured, we can (re)initialize the demo
              * code. */
             APP_DeviceMSDInitialize();
-            APP_DeviceCDCEmulatorInitialize();
 
             break;
 
@@ -156,7 +181,6 @@ bool USER_USB_CALLBACK_EVENT_HANDLER(USB_EVENT event, void *pdata, uint16_t size
             /* We have received a non-standard USB request.  The MSD driver
              * needs to check to see if the request was for it. */
             USBCheckMSDRequest();
-            USBCheckCDCRequest();
 
             break;
 

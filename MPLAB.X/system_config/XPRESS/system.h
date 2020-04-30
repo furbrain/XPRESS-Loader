@@ -31,6 +31,7 @@ limitations under the License.
 #define DAY             23       // Day:1..31
 
 #define MAIN_RETURN void
+#define _XTAL_FREQ 48000000
 
 /*********************************************************************
 * Function: void SYSTEM_Initialize(void)

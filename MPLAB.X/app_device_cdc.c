@@ -21,8 +21,7 @@ limitations under the License.
 #include <stdint.h>
 #include <string.h>
 #include <stddef.h>
-
-#include "system.h"
+#include <xc.h>
 #include "usb.h"
 #include "usb_device_cdc.h"
 

@@ -30,7 +30,6 @@ limitations under the License.
 /** INCLUDES *******************************************************/
 #include "usb.h"
 #include "usb_device_msd.h"
-#include "usb_device_cdc.h"
 
 /** CONSTANTS ******************************************************/
 
@@ -58,7 +57,7 @@ const uint8_t configDescriptor1[]={
     /* Configuration Descriptor */
     9,    // Size of this descriptor in bytes
     USB_DESCRIPTOR_CONFIGURATION,                // CONFIGURATION descriptor type
-    98, 0,                  // Total length of data for this cfg
+    32, 0,                  // Total length of data for this cfg
     3,                      // Number of interfaces in this cfg
     1,                      // Index value of this configuration
     2,                      // Configuration string index
@@ -90,96 +89,7 @@ const uint8_t configDescriptor1[]={
     _EP01_OUT,
     _BULK,
     MSD_OUT_EP_SIZE,0x00,
-    0x01,
-    
-    
-//---------------IAD Descriptor------------------------------------
-    /* Interface Association Descriptor: CDC Function 1*/ 
-	0x08,             //sizeof(USB_IAD_DSC), // Size of this descriptor in bytes 
-	0x0B,             // Interface assocication descriptor type 
-	CDC_COMM_INTF_ID, // The first associated interface 
-	2,                // Number of contiguous associated interface 
-	COMM_INTF,        // bInterfaceClass of the first interface 
-	ABSTRACT_CONTROL_MODEL, // bInterfaceSubclass of the first interface 
-	V25TER,           // bInterfaceProtocol of the first interface 
-	0,                // Interface string index 						
-
-//---------------CDC Function 1 Descriptors------------------------
-							
-    /* Interface Descriptor: CDC Function 1, Status (communication) Interface */
-    0x09,   //sizeof(USB_INTF_DSC),   // Size of this descriptor in bytes
-    USB_DESCRIPTOR_INTERFACE,               // INTERFACE descriptor type
-    CDC_COMM_INTF_ID,       // Interface Number
-    0,                      // Alternate Setting Number
-    1,                      // Number of endpoints in this intf
-    COMM_INTF,              // Class code
-    ABSTRACT_CONTROL_MODEL, // Subclass code
-    V25TER,                 // Protocol code
-    0,                      // Interface string index
-
-    /* CDC Class-Specific Descriptors */
-    //5 bytes: Header Functional Descriptor
-    sizeof(USB_CDC_HEADER_FN_DSC), //Size of this descriptor in bytes (5)
-    CS_INTERFACE,               //bDescriptorType (class specific)
-    DSC_FN_HEADER,              //bDescriptorSubtype (header functional descriptor)
-    0x20, 0x01,                 //bcdCDC (CDC spec version this fw complies with: v1.20 [stored in little endian])
-
-    //4 bytes: Abstract Control Management Functional Descriptor
-    sizeof(USB_CDC_ACM_FN_DSC), //Size of this descriptor in bytes (4)
-    CS_INTERFACE,               //bDescriptorType (class specific)
-    DSC_FN_ACM,                 //bDescriptorSubtype (abstract control management)
-    USB_CDC_ACM_FN_DSC_VAL,     //bmCapabilities: (see PSTN120.pdf Table 4)
-
-    //5 bytes: Union Functional Descriptor
-    sizeof(USB_CDC_UNION_FN_DSC), //Size of this descriptor in bytes (5)
-    CS_INTERFACE,                 //bDescriptorType (class specific)
-    DSC_FN_UNION,                 //bDescriptorSubtype (union functional)
-    CDC_COMM_INTF_ID,             //bControlInterface: Interface number of the communication class interface (1)
-    CDC_DATA_INTF_ID,             //bSubordinateInterface0: Data class interface #2 is subordinate to this interface
-
-    //5 bytes: Call Management Functional Descriptor
-    sizeof(USB_CDC_CALL_MGT_FN_DSC), //Size of this descriptor in bytes (5)
-    CS_INTERFACE,                    //bDescriptorType (class specific)
-    DSC_FN_CALL_MGT,                 //bDescriptorSubtype (call management functional)
-    0x00,                            //bmCapabilities: device doesn't handle call management
-    CDC_DATA_INTF_ID,                //bDataInterface: Data class interface ID used for the optional call management
-
-    /* Endpoint Descriptor */
-    0x07,/*sizeof(USB_EP_DSC)*/
-    USB_DESCRIPTOR_ENDPOINT,    //Endpoint Descriptor
-    _EP02_IN,                   //EndpointAddress
-    _INTERRUPT,                 //Attributes
-    CDC_COMM_IN_EP_SIZE,0x00,   //size
-    0x02,                       //Interval
-
-    /* Interface Descriptor: CDC Function 1, Data Interface*/
-    0x09,//sizeof(USB_INTF_DSC),   // Size of this descriptor in bytes
-    USB_DESCRIPTOR_INTERFACE,      // INTERFACE descriptor type
-    CDC_DATA_INTF_ID,       // Interface Number
-    0,                      // Alternate Setting Number
-    2,                      // Number of endpoints in this intf
-    DATA_INTF,              // Class code
-    0,                      // Subclass code
-    NO_PROTOCOL,            // Protocol code
-    0,                      // Interface string index
-    
-    /* Endpoint Descriptor */
-    //sizeof(USB_EP_DSC),DSC_EP,_EP03_OUT,_BULK,CDC_BULK_OUT_EP_SIZE,0x00,
-    0x07,/*sizeof(USB_EP_DSC)*/
-    USB_DESCRIPTOR_ENDPOINT,    //Endpoint Descriptor
-    _EP03_OUT,            //EndpointAddress
-    _BULK,                       //Attributes
-    CDC_DATA_OUT_EP_SIZE,0x00,                  //size
-    0x00,                       //Interval
-
-    /* Endpoint Descriptor */
-    //sizeof(USB_EP_DSC),DSC_EP,_EP03_IN,_BULK,CDC_BULK_IN_EP_SIZE,0x00
-    0x07,/*sizeof(USB_EP_DSC)*/
-    USB_DESCRIPTOR_ENDPOINT,    //Endpoint Descriptor
-    _EP03_IN,            //EndpointAddress
-    _BULK,                       //Attributes
-    CDC_DATA_IN_EP_SIZE,0x00,                  //size
-    0x00                       //Interval
+    0x01,    
 };
 
 
@@ -190,17 +100,16 @@ const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[1];}sd000={
     {0x0409} //0x0409 = Language ID code for US English
 };
 //Manufacturer string descriptor
-const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[25];}sd001={
+const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[15];}sd001={
 sizeof(sd001),USB_DESCRIPTOR_STRING,
-{'M','i','c','r','o','c','h','i','p',' ',
-'T','e','c','h','n','o','l','o','g','y',' ','I','n','c','.'
-}};
+{'L','o','r','r','a','i','n','b','o','w',' ','T','e','c','h'}
+};
 
 //Product string descriptor
-const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[28];}sd002={
+const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[5];}sd002={
 sizeof(sd002),USB_DESCRIPTOR_STRING,
-{'M','i','c','r','o','c','h','i','p',' ','C','o','m','p','o','s','i','t','e',' ','D','e','v','i','c','e'
-}};
+{'S','o','l','a','s'}
+};
 
 //Serial number string descriptor.  Note: This should be unique for each unit 
 //built on the assembly line.  Plugging in two units simultaneously with the 
@@ -208,9 +117,9 @@ sizeof(sd002),USB_DESCRIPTOR_STRING,
 //all hosts support all character values in the serial number string.  The MSD 
 //Bulk Only Transport (BOT) specs v1.0 restrict the serial number to consist only
 //of ASCII characters "0" through "9" and capital letters "A" through "F".
-const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[12];}sd003={
+const struct{uint8_t bLength;uint8_t bDscType;uint16_t string[6];}sd003={
 sizeof(sd003),USB_DESCRIPTOR_STRING,
-{'1','2','3','4','5','6','7','8','9','0','9','9'}};
+{'1','2','3','4','5','6'}};
 
 
 //Array of configuration descriptors

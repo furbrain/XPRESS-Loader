@@ -14,9 +14,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 *******************************************************************************/
-#include "buttons.h"
-#include "leds.h"
-#include "power.h"
 
 /*******************************************************************/
 /******** USB stack hardware selection options *********************/
@@ -45,13 +42,13 @@ limitations under the License.
 #endif
 
 //#define USE_USB_BUS_SENSE_IO		//JP1 must be in R-U position to use this feature on this board
-#define tris_usb_bus_sense  TRISBbits.TRISB5    // Input
+#define tris_usb_bus_sense  TRISCbits.TRISC4    // Input
 #if defined(USE_USB_BUS_SENSE_IO)
-#define USB_BUS_SENSE       PORTBbits.RB5
+#define USB_BUS_SENSE       PORTCbits.RC4
 #else
 #define USB_BUS_SENSE       1
 #endif
 
 //Uncomment this to make the output HEX of this project
 //   to be able to be bootloaded using the HID bootloader
-#define PROGRAMMABLE_WITH_USB_HID_BOOTLOADER
+//#define PROGRAMMABLE_WITH_USB_HID_BOOTLOADER

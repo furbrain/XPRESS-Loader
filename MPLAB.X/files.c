@@ -81,46 +81,50 @@ void MasterBootRecordGet( uint8_t * buffer, uint8_t seg)
 //------------------------------------------------------------------------------
 // Physical Sector - 1, Logical Sector - 0.  
 // This is the first sector in the partition, known as the VBR, "volume boot record" 
+const uint8_t VBR[] = {
+    0xEB,                                // (legacy) Jump instruction
+    0x3C,
+    0x90,                          
+    'M','S','D','O','S','5','.','0',   // OEM Name "MSDOS5.0"
+    (FILEIO_CONFIG_MEDIA_SECTOR_SIZE & 0xFF),        // Bytes per sector 
+    (FILEIO_CONFIG_MEDIA_SECTOR_SIZE>>8),            
+    0x01,                              // Sectors per cluster
+    0x01,  // Reserved sector count (1 for FAT12 or FAT16)
+    0x00,			
+    0x01,                              // number of FATs 
+    DRV_FILEIO_CONFIG_INTERNAL_FLASH_MAX_NUM_FILES_IN_ROOT,
+    0x00,		// Max number of root directory entries - 16 files allowed
+    0x00, 0x00,  // total sectors (0x0000 means: use the 4 byte field at offset 0x20 instead)
+    0xF8,			    //Media Descriptor
+    DRV_FILEIO_INTERNAL_FLASH_NUM_FAT_SECTORS,
+    0x00,                                            // Sectors per FAT
+    0x3F, 
+    0x00,                                            // Sectors per track
+    0xFF, 
+    0x00,                                            // Number of heads
+    0x01,  0x00, 0x00, 0x00,         // Hidden sectors (previous partition)
+    (uint8_t)  DRV_FILEIO_INTERNAL_FLASH_PARTITION_SIZE,
+    (uint8_t)( DRV_FILEIO_INTERNAL_FLASH_PARTITION_SIZE >> 8),
+    (uint8_t)( DRV_FILEIO_INTERNAL_FLASH_PARTITION_SIZE >> 16),
+    (uint8_t)( DRV_FILEIO_INTERNAL_FLASH_PARTITION_SIZE >> 24),	//Total sectors (when uint16_t value at offset 20 is 0x0000)
+
+    0x00,			// Physical drive number
+    0x00,			// Reserved("current head")
+    0x29,			// Signature
+    0x32,          // ID (serial number)
+    0x67, 
+    0x94, 
+    0xC4,
+    'S','O','L','A','S',' ',' ',' ',' ',' ',' ',  // Volume Label (11 bytes)
+    'F','A','T','1','2',' ',' ',' '     // FAT system ( 8 bytes)
+};
+
 void VolumeBootRecordGet( uint8_t * buffer, uint8_t seg) 
 {  // fabricate an MBR structure in the RAM buffer
     memset( buffer, 0, MSD_OUT_EP_SIZE);              // clear buffer  
     if (seg == 0) { // segment from 000 to 0x03f
-    buffer[ 0x000]=0xEB;                                // (legacy) Jump instruction
-    buffer[ 0x001]=0x3C; 
-    buffer[ 0x002]=0x90;                                
-    memcpy( (void*)&buffer[3], (void*)"MSDOS5.0", 8);   // OEM Name "MSDOS5.0"
-    buffer[ 0x00b] = (FILEIO_CONFIG_MEDIA_SECTOR_SIZE & 0xFF);        // Bytes per sector 
-    buffer[ 0x00c] = (FILEIO_CONFIG_MEDIA_SECTOR_SIZE>>8);            
-    buffer[ 0x00d] = 0x01;                              // Sectors per cluster
-    buffer[ 0x00e] = 0x01;  // Reserved sector count (1 for FAT12 or FAT16)
-    // 0x00,			
-    buffer[ 0x010] = 0x01;                              // number of FATs 
-    buffer[ 0x011] = DRV_FILEIO_CONFIG_INTERNAL_FLASH_MAX_NUM_FILES_IN_ROOT;
-    // 0x00,		// Max number of root directory entries - 16 files allowed
-    // 0x00, 0x00,  // total sectors (0x0000 means: use the 4 byte field at offset 0x20 instead)
-    buffer[ 0x015] = 0xF8;			    //Media Descriptor
-    buffer[ 0x016] = DRV_FILEIO_INTERNAL_FLASH_NUM_FAT_SECTORS;
-    // 0x00,                                            // Sectors per FAT
-    buffer[ 0x018] = 0x3F; 
-    // 0x00,                                            // Sectors per track
-    buffer[ 0x01A] = 0xFF; 
-    // 0x00,                                            // Number of heads
-    buffer[ 0x01c] = 0x01; // 0x00, 0x00, 0x00,         // Hidden sectors (previous partition)
-    buffer[ 0x020] = (uint8_t)  DRV_FILEIO_INTERNAL_FLASH_PARTITION_SIZE; 
-    buffer[ 0x021] = (uint8_t)( DRV_FILEIO_INTERNAL_FLASH_PARTITION_SIZE >> 8); 
-    buffer[ 0x022] = (uint8_t)( DRV_FILEIO_INTERNAL_FLASH_PARTITION_SIZE >> 16); 
-    buffer[ 0x023] = (uint8_t)( DRV_FILEIO_INTERNAL_FLASH_PARTITION_SIZE >> 24);	//Total sectors (when uint16_t value at offset 20 is 0x0000)
-
-    buffer[ 0x024] = 0x00;			// Physical drive number
-    buffer[ 0x025] = 0x00;			// Reserved("current head")
-    buffer[ 0x026] = 0x29;			// Signature
-    buffer[ 0x027] = 0x32;          // ID (serial number)
-    buffer[ 0x028] = 0x67; 
-    buffer[ 0x029] = 0x94; 
-    buffer[ 0x02a] = 0xC4;		
-    memcpy( (void*)&buffer[ 0x02b], (void*)"XPRESS     ", 11); // Volume Label (11 bytes)
-    memcpy( (void*)&buffer[ 0x036], (void*)"FAT12   ", 8);     // FAT system ( 8 bytes)
-    return;
+        memcpy(buffer,VBR,sizeof(VBR));
+        return;
     }
     if ( seg < 7) return;  // segments 1-6 from 0x040 to 0x1c0 are empty
 //Operating system boot code
@@ -162,14 +166,14 @@ void FATRecordSet( uint8_t * buffer, uint8_t seg)
 //------------------------------------------------------------------------------
 // ROOT sector at LBA = 3
 
-const char readme[] = "<html><head><meta http-equiv=\"refresh\" content=\"0;URL='http://mplabxpress.microchip.com'\" /></head></html>";
+const char readme[] = "Copy your downloaded files here to transfer them to solas";
 
 uint8_t readme_size( void) {
     return sizeof( readme);     // required by direct.c (external references return always size 0!?)
 }
 
 const uint8_t entry0[ ROOT_ENTRY_SIZE] = { 
-    'X','P','R','E','S','S',' ',' ',' ',' ',' ',  // Drive Name (11 characters, padded with spaces)
+    'S','O','L','A','S',' ',' ',' ',' ',' ',' ',  // Drive Name (11 characters, padded with spaces)
     0x08, //specify this entry as a volume label
     0x00, //Reserved
 
@@ -195,7 +199,7 @@ const uint8_t entry0[ ROOT_ENTRY_SIZE] = {
 
  const  uint8_t entry1[ ROOT_ENTRY_SIZE] = {
     'R','E','A','D','M','E',' ',' ',    // File name (exactly 8 characters)
-    'H','T','M',                        // File extension (exactly 3 characters)
+    'T','X','T',                        // File extension (exactly 3 characters)
     0x20,           // specify this entry as a regular file
     0x00,           // Reserved
     0x00,           // Creation time, fine res 10 ms units (0-199)
