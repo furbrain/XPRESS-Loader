@@ -39,12 +39,12 @@ const USB_DEVICE_DESCRIPTOR device_dsc=
     0x12,    // Size of this descriptor in bytes
     USB_DESCRIPTOR_DEVICE,                // DEVICE descriptor type
     0x0200,                 // USB Spec Release Number in BCD format
-    0xEF,					// Class Code "MISC_DEVICE" (ex: uses IAD descriptor)  
-    0x02,                   // Subclass code
-    0x01,                   // Protocol code
+    0x00,                   // See interface for class codes
+    0x00,                   // Subclass code
+    0x00,                   // Protocol code
     USB_EP0_BUFF_SIZE,      // Max packet size for EP0, see usb_config.h
     0x04D8,                 // Vendor ID  "Microchip Technology Inc"
-    0x0057,                 // Product ID RS232 Emulation
+    0x0009,                 // MSD device
     0x0001,                 // Device release number in BCD format
     0x01,                   // Manufacturer string index
     0x02,                   // Product string index
@@ -58,7 +58,7 @@ const uint8_t configDescriptor1[]={
     9,    // Size of this descriptor in bytes
     USB_DESCRIPTOR_CONFIGURATION,                // CONFIGURATION descriptor type
     32, 0,                  // Total length of data for this cfg
-    3,                      // Number of interfaces in this cfg
+    1,                      // Number of interfaces in this cfg
     1,                      // Index value of this configuration
     2,                      // Configuration string index
     _DEFAULT | _SELF,       // Attributes, see usb_device.h
